@@ -3,196 +3,354 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Avto.net Finder</title>
+  <title>Avto.net LIVE – do 2000€</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 16px; }
-    input { width: min(980px, 92vw); padding: 10px; }
-    button { padding: 10px 14px; margin-left: 6px; cursor: pointer; }
-    .row { margin: 10px 0; }
-    .muted { color: #666; font-size: 14px; }
-    ul { padding-left: 18px; }
-    li { margin: 8px 0; }
-    .badge { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; font-size:12px; margin-left:8px; color:#444; }
-    .error { color: #b00020; }
-    details { margin-top: 10px; }
-    pre { white-space: pre-wrap; word-break: break-word; background:#f7f7f7; padding:10px; border-radius:8px; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 18px; background:#fafafa; }
+    h2 { margin: 0 0 8px; }
+    .muted { color:#666; font-size: 13px; }
+    .card { background:#fff; border:1px solid #e7e7e7; border-radius:12px; padding:14px; max-width: 1100px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:10px 0; }
+    input[type="text"] { flex: 1; min-width: 320px; padding:10px 12px; border-radius:10px; border:1px solid #ddd; }
+    input[type="number"] { width: 120px; padding:10px 12px; border-radius:10px; border:1px solid #ddd; }
+    button { padding:10px 12px; border-radius:10px; border:1px solid #111; background:#111; color:#fff; cursor:pointer; }
+    button.secondary { background:#fff; color:#111; }
+    button:disabled { opacity:0.5; cursor:not-allowed; }
+
+    .status { margin-top: 8px; font-size: 13px; color:#333; }
+    .error { margin-top: 8px; font-size: 13px; color:#b00020; }
+
+    .list { margin-top: 12px; display:flex; flex-direction:column; gap:10px; }
+    .item {
+      background:#fff; border:1px solid #e7e7e7; border-radius:12px; padding:12px 14px;
+      display:flex; gap:12px; align-items:flex-start; justify-content:space-between;
+    }
+    .left { min-width: 0; }
+    .title { font-weight:700; }
+    .meta { margin-top:4px; display:flex; gap:8px; flex-wrap:wrap; font-size: 13px; color:#444; }
+    .pill { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; background:#fff; }
+    .pill.new { border-color:#0a7; color:#0a7; font-weight:700; }
+    .pill.price { border-color:#bbb; }
+    .right { display:flex; gap:8px; align-items:center; flex-shrink:0; }
+    a { color:#0b57d0; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .small { font-size: 12px; color:#666; }
   </style>
 </head>
 <body>
-  <h2>Avto.net – prikaz oglasov iz linka</h2>
-  <div class="muted">
-    Prilepi URL strani, kjer vidiš seznam oglasov (rezultati iskanja), ne “kategorije”.
-    Če Avto.net blokira proxy, bo v debug izpisu.
+  <div class="card">
+    <h2>Avto.net LIVE (do 2000€)</h2>
+    <div class="muted">
+      Stran periodično preverja Avto.net rezultate in označi nove oglase.  
+      Če Avto.net/proxy blokira, bo treba backend rešitev.
+    </div>
+
+    <div class="row">
+      <input id="url" type="text" />
+    </div>
+
+    <div class="row">
+      <label class="muted">Max €</label>
+      <input id="maxPrice" type="number" value="2000" min="0" step="50" />
+      <label class="muted">Interval (s)</label>
+      <input id="intervalSec" type="number" value="60" min="10" step="10" />
+      <button id="btnStart" onclick="start()">Start</button>
+      <button id="btnStop" class="secondary" onclick="stop()" disabled>Stop</button>
+      <button class="secondary" onclick="refreshOnce()">Ročno osveži</button>
+      <button class="secondary" onclick="resetSeen()">Reset “seen”</button>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="error" class="error"></div>
   </div>
 
-  <div class="row">
-    <input id="link" placeholder="Prilepi Avto.net URL z rezultati (npr. .../Ads/search.asp?...)" />
-    <button onclick="saveLink()">Shrani</button>
-    <button onclick="loadAds()">Prikaži oglase</button>
+  <div class="card" style="margin-top:14px; max-width:1100px;">
+    <div class="row" style="justify-content:space-between;">
+      <div>
+        <div class="muted">Prikazujem: <b>najprej NEW</b>, potem ostalo (v vrstnem redu iz Avto.net).</div>
+        <div class="muted">Klik na naslov odpre oglas v novem zavihku.</div>
+      </div>
+      <div class="small" id="lastCheck"></div>
+    </div>
+    <div id="list" class="list"></div>
   </div>
-
-  <div id="status" class="row muted"></div>
-  <div id="error" class="row error"></div>
-
-  <ul id="results"></ul>
-
-  <details id="debugBox" style="display:none;">
-    <summary>Debug</summary>
-    <div class="muted" id="debugMeta"></div>
-    <pre id="debugHtml"></pre>
-  </details>
 
 <script>
-  // 2 proxy-ja (če prvi odpove, poskusi drugega)
+  // Tvoj fiksni link (lahko ga spremeniš v inputu)
+  const DEFAULT_URL = "https://www.avto.net/Ads/results_100.asp?oglasrubrika=1&prodajalec=2";
+
+  // Proxy strategija (brez backenda). Če prvi odpove, poskusimo drugi.
   const PROXIES = [
     (url) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(url),
     (url) => "https://r.jina.ai/http://" + url.replace(/^https?:\/\//i, "")
   ];
 
-  function normalizeUrl(url) {
-    if (!url) return "";
-    url = url.trim();
-    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
-    return url;
+  const LS_SEEN_KEY = "avtonet_seen_ids_v1";
+  const LS_CFG_KEY  = "avtonet_cfg_v1";
+
+  let timer = null;
+  let inFlight = false;
+
+  function $(id){ return document.getElementById(id); }
+
+  function setStatus(msg){ $("status").textContent = msg || ""; }
+  function setError(msg){ $("error").textContent = msg || ""; }
+
+  function nowStr(){
+    const d = new Date();
+    return d.toLocaleString();
   }
 
-  function setStatus(msg) { document.getElementById("status").innerText = msg || ""; }
-  function setError(msg) { document.getElementById("error").innerText = msg || ""; }
-
-  function setResults(items) {
-    const ul = document.getElementById("results");
-    ul.innerHTML = "";
-    items.forEach(it => {
-      const li = document.createElement("li");
-      const a = document.createElement("a");
-      a.href = it.href;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.textContent = it.title || it.href;
-      li.appendChild(a);
-      if (it.meta) {
-        const span = document.createElement("span");
-        span.className = "badge";
-        span.textContent = it.meta;
-        li.appendChild(span);
-      }
-      ul.appendChild(li);
-    });
+  function loadCfg(){
+    try { return JSON.parse(localStorage.getItem(LS_CFG_KEY) || "{}"); } catch { return {}; }
+  }
+  function saveCfg(cfg){
+    localStorage.setItem(LS_CFG_KEY, JSON.stringify(cfg));
   }
 
-  function dedupeByHref(items) {
-    const seen = new Set();
-    return items.filter(x => {
-      if (!x.href) return false;
-      if (seen.has(x.href)) return false;
-      seen.add(x.href);
-      return true;
-    });
+  function loadSeen(){
+    try { return JSON.parse(localStorage.getItem(LS_SEEN_KEY) || "[]"); } catch { return []; }
+  }
+  function saveSeen(arr){
+    localStorage.setItem(LS_SEEN_KEY, JSON.stringify(arr));
   }
 
-  function absolutize(baseUrl, href) {
-    try { return new URL(href, baseUrl).toString(); }
-    catch { return href; }
-  }
-
-  function parseAvtoNet(html, baseUrl) {
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const anchors = Array.from(doc.querySelectorAll("a[href]"));
-
-    // bolj robustno: regex case-insensitive
-    const re = /ads\/details\.asp/i;
-
-    const items = anchors
-      .map(a => {
-        const hrefRaw = a.getAttribute("href") || "";
-        const href = absolutize(baseUrl, hrefRaw);
-        const title = (a.textContent || "").replace(/\s+/g, " ").trim();
-
-        if (!re.test(href)) return null;
-
-        // meta: poskusi ujeti € iz bližnjega teksta
-        const parentText = (a.closest("li, div, article, section")?.textContent || "")
-          .replace(/\s+/g, " ").trim();
-        let meta = "";
-        const m = parentText.match(/(\d[\d\.\s]{2,}\s?€)/);
-        if (m) meta = m[1].replace(/\s+/g, " ").trim();
-
-        return { title: title || "Oglas", href, meta };
-      })
-      .filter(Boolean);
-
-    return dedupeByHref(items);
-  }
-
-  function showDebug(meta, html) {
-    const box = document.getElementById("debugBox");
-    const m = document.getElementById("debugMeta");
-    const pre = document.getElementById("debugHtml");
-    box.style.display = "block";
-    m.innerText = meta || "";
-    pre.innerText = (html || "").slice(0, 800);
-  }
-
-  function saveLink() {
-    const link = normalizeUrl(document.getElementById("link").value);
-    if (!link) return;
-    localStorage.setItem("avtonetLink", link);
-    setStatus("Link shranjen.");
+  function resetSeen(){
+    saveSeen([]);
+    setStatus("Resetirano: “seen” je prazno.");
     setError("");
   }
 
-  async function fetchWithFallback(url) {
+  function normalizeUrl(u){
+    u = (u || "").trim();
+    if (!u) return "";
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    return u;
+  }
+
+  async function fetchHtml(url){
     let lastErr = null;
-    for (let i = 0; i < PROXIES.length; i++) {
-      const proxied = PROXIES[i](url);
-      try {
+    for (const p of PROXIES){
+      try{
+        const proxied = p(url);
         const res = await fetch(proxied, { cache: "no-store" });
         if (!res.ok) throw new Error("HTTP " + res.status);
         return await res.text();
-      } catch (e) {
+      } catch(e){
         lastErr = e;
       }
     }
     throw lastErr || new Error("Fetch failed");
   }
 
-  async function loadAds() {
-    setError("");
-    setResults([]);
-    document.getElementById("debugBox").style.display = "none";
+  function absUrl(base, href){
+    try { return new URL(href, base).toString(); }
+    catch { return href; }
+  }
 
-    const saved = localStorage.getItem("avtonetLink") || "";
-    const linkInput = document.getElementById("link").value;
-    const url = normalizeUrl(linkInput || saved);
+  // Izlušči ceno iz teksta (zelo robustno; ujame 1.950 €, 1950 €, 1 950 €, ipd.)
+  function extractPriceEUR(text){
+    if (!text) return null;
+    const t = text.replace(/\u00a0/g, " "); // NBSP
+    // prvi match, kjer je € blizu številke
+    const m = t.match(/(\d[\d\.\s]{0,10})\s*€|\€\s*(\d[\d\.\s]{0,10})/);
+    if (!m) return null;
+    const raw = (m[1] || m[2] || "").replace(/[.\s]/g, "");
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) ? n : null;
+  }
 
-    if (!url) { setError("Najprej prilepi Avto.net link z rezultati iskanja."); return; }
+  // Parsanje rezultatov:
+  // - poišče vse <a href=...> ki kažejo na Ads/details.asp
+  // - za vsak link poskusi najti “container” in iz njega ceno
+  function parseResults(html, baseUrl){
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const anchors = Array.from(doc.querySelectorAll("a[href]"));
+    const out = [];
+    const reDetails = /ads\/details\.asp/i;
 
-    setStatus("Nalagam…");
-    try {
-      const html = await fetchWithFallback(url);
-      const items = parseAvtoNet(html, url);
+    for (const a of anchors){
+      const hrefRaw = a.getAttribute("href") || "";
+      const href = absUrl(baseUrl, hrefRaw);
+      if (!reDetails.test(href)) continue;
 
-      if (!items.length) {
-        setStatus("");
-        setError("Ni najdenih linkov do oglasov (Ads/details.asp). Verjetno URL ni rezultatni seznam ali Avto.net vrne preusmeritev/zaščito.");
-        showDebug("URL: " + url + " | HTML length: " + (html?.length || 0), html);
-        return;
+      const title = (a.textContent || "").replace(/\s+/g, " ").trim() || "Oglas";
+      // container je lahko li/div/article/td — vzamemo najbližjega, da ujame ceno
+      const container = a.closest("li, article, div, tr, td, section") || a.parentElement;
+      const containerText = (container?.textContent || "").replace(/\s+/g, " ").trim();
+      const price = extractPriceEUR(containerText);
+
+      // ID oglasov: poskusimo iz URL-ja pobrati nekaj stabilnega
+      // (če ni jasnega ID parametra, uporabimo celoten href)
+      let id = href;
+      const idMatch = href.match(/id=(\d+)/i) || href.match(/ID=(\d+)/);
+      if (idMatch) id = idMatch[1];
+
+      out.push({ id, title, href, price, rawText: containerText });
+    }
+
+    // Dedupe po id/href
+    const seen = new Set();
+    const uniq = [];
+    for (const x of out){
+      const key = x.id || x.href;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      uniq.push(x);
+    }
+    return uniq;
+  }
+
+  function render(items, seenSet){
+    const maxPrice = parseInt($("maxPrice").value, 10) || 2000;
+
+    // filter: price <= maxPrice (če price ni najden, ga skrijemo – po želji lahko pokažemo tudi “unknown”)
+    const filtered = items.filter(x => x.price != null && x.price <= maxPrice);
+
+    // NEW na vrh
+    const withFlags = filtered.map(x => ({...x, isNew: !seenSet.has(String(x.id || x.href))}));
+    const news = withFlags.filter(x => x.isNew);
+    const olds = withFlags.filter(x => !x.isNew);
+
+    const finalList = [...news, ...olds];
+    const list = $("list");
+    list.innerHTML = "";
+
+    if (!finalList.length){
+      list.innerHTML = `<div class="muted">Ni zadetkov do ${maxPrice} € (ali Avto.net ne izpiše cene v HTML, ki ga dobimo).</div>`;
+      return { newCount: 0, shown: 0 };
+    }
+
+    for (const x of finalList.slice(0, 80)){ // limit za preglednost
+      const el = document.createElement("div");
+      el.className = "item";
+
+      const left = document.createElement("div");
+      left.className = "left";
+
+      const t = document.createElement("div");
+      t.className = "title";
+      const a = document.createElement("a");
+      a.href = x.href;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = x.title;
+      t.appendChild(a);
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+
+      const p1 = document.createElement("span");
+      p1.className = "pill price";
+      p1.textContent = (x.price != null ? `${x.price} €` : "cena ?");
+
+      meta.appendChild(p1);
+
+      if (x.isNew){
+        const p2 = document.createElement("span");
+        p2.className = "pill new";
+        p2.textContent = "NEW";
+        meta.appendChild(p2);
       }
 
-      setResults(items.slice(0, 50));
-      setStatus("Najdeno oglasov: " + items.length + " (prikazujem prvih 50).");
-      localStorage.setItem("avtonetLink", url);
-      document.getElementById("link").value = url;
+      left.appendChild(t);
+      left.appendChild(meta);
 
-    } catch (e) {
+      const right = document.createElement("div");
+      right.className = "right";
+      const small = document.createElement("div");
+      small.className = "small";
+      small.textContent = x.isNew ? "novo najdeno" : "že videno";
+      right.appendChild(small);
+
+      el.appendChild(left);
+      el.appendChild(right);
+      list.appendChild(el);
+    }
+
+    return { newCount: news.length, shown: finalList.length };
+  }
+
+  async function refreshOnce(){
+    if (inFlight) return;
+    inFlight = true;
+
+    try{
+      setError("");
+      const url = normalizeUrl($("url").value);
+      const maxPrice = parseInt($("maxPrice").value, 10) || 2000;
+
+      if (!url){ setError("Manjka URL."); return; }
+
+      setStatus("Nalagam Avto.net…");
+      const html = await fetchHtml(url);
+
+      const items = parseResults(html, url);
+
+      const seenArr = loadSeen();
+      const seenSet = new Set(seenArr.map(String));
+
+      const { newCount, shown } = render(items, seenSet);
+
+      // Označimo kot “seen” vse, ki so prikazani (da naslednji refresh pokaže samo res nove)
+      // (lahko spremeniš logiko: only mark after click; ampak za “prvi vidim” je to ok)
+      const maxPriceLocal = maxPrice;
+      const toMark = items
+        .filter(x => x.price != null && x.price <= maxPriceLocal)
+        .map(x => String(x.id || x.href));
+
+      const merged = Array.from(new Set([...seenArr.map(String), ...toMark]));
+      saveSeen(merged);
+
+      $("lastCheck").textContent = "Zadnji check: " + nowStr();
+      setStatus(`OK. Prikazujem ${shown} oglasov do ${maxPrice} €. Novi: ${newCount}.`);
+
+      // opcijsko: zvočni signal ob novih (brskalnik mora dovoliti)
+      if (newCount > 0) {
+        try { new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=").play(); } catch {}
+      }
+
+    } catch(e){
       setStatus("");
-      setError("Napaka pri nalaganju (proxy/Avto.net blokada). " + (e?.message || e));
+      setError("Napaka pri nalaganju. Avto.net/proxy lahko blokira. (" + (e?.message || e) + ")");
+    } finally {
+      inFlight = false;
     }
   }
 
-  (function init() {
-    const saved = localStorage.getItem("avtonetLink");
-    if (saved) document.getElementById("link").value = saved;
+  function start(){
+    const intervalSec = Math.max(10, parseInt($("intervalSec").value, 10) || 60);
+
+    // shrani nastavitve
+    saveCfg({
+      url: $("url").value,
+      maxPrice: $("maxPrice").value,
+      intervalSec: intervalSec
+    });
+
+    $("btnStart").disabled = true;
+    $("btnStop").disabled = false;
+
+    refreshOnce();
+    stop(); // počisti star timer
+    timer = setInterval(refreshOnce, intervalSec * 1000);
+
+    setStatus("Auto-refresh ON (" + intervalSec + "s).");
+  }
+
+  function stop(){
+    if (timer) clearInterval(timer);
+    timer = null;
+    $("btnStart").disabled = false;
+    $("btnStop").disabled = true;
+  }
+
+  // init
+  (function init(){
+    const cfg = loadCfg();
+    $("url").value = normalizeUrl(cfg.url || DEFAULT_URL);
+    $("maxPrice").value = cfg.maxPrice || 2000;
+    $("intervalSec").value = cfg.intervalSec || 60;
+    $("lastCheck").textContent = "";
   })();
 </script>
 </body>
