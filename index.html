@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mobile.de Car Finder</title>
+</head>
+<body>
+
+<h2>Mobile.de Alert</h2>
+
+<input id="link" placeholder="Prilepi Mobile.de link" style="width:300px">
+<button onclick="save()">Shrani</button>
+
+<p id="msg"></p>
+
+<script>
+function save(){
+  let link = document.getElementById("link").value;
+  localStorage.setItem("mobileLink", link);
+  document.getElementById("msg").innerText = "Link shranjen!";
+}
+</script>
+
+</body>
+</html>
