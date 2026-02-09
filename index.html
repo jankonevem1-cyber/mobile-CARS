@@ -1,24 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="sl">
 <head>
-  <title>Mobile.de Car Finder</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Avto.net Finder</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 16px; }
+    input { width: min(900px, 90vw); padding: 10px; }
+    button { padding: 10px 14px; margin-left: 6px; cursor: pointer; }
+    .row { margin: 10px 0; }
+    .muted { color: #666; font-size: 14px; }
+    ul { padding-left: 18px; }
+    li { margin: 6px 0; }
+    .badge { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; font-size:12px; margin-left:8px; color:#444; }
+    .error { color: #b00020; }
+  </style>
 </head>
 <body>
+  <h2>Avto.net – prikaz oglasov iz linka</h2>
+  <div class="muted">
+    Prilepi Avto.net link iskanja (npr. iz “Iskalnik”). Stran nato izpiše oglase.<br>
+    Opomba: za branje Avto.net uporabljam CORS proxy (včasih lahko odpove).
+  </div>
 
-<h2>Mobile.de Alert</h2>
+  <div class="row">
+    <input id="link" placeholder="Prilepi Avto.net search link (npr. https://www.avto.net/Ads/search.asp?...)" />
+    <button onclick="saveLink()">Shrani</button>
+    <button onclick="loadAds()">Prikaži oglase</button>
+  </div>
 
-<input id="link" placeholder="Prilepi Mobile.de link" style="width:300px">
-<button onclick="save()">Shrani</button>
+  <div class="row muted">
+    <span>Proxy:</span>
+    <span class="badge">api.allorigins.win</span>
+  </div>
 
-<p id="msg"></p>
+  <div id="status" class="row muted"></div>
+  <div id="error" class="row error"></div>
+  <ul id="results"></ul>
 
 <script>
-function save(){
-  let link = document.getElementById("link").value;
-  localStorage.setItem("mobileLink", link);
-  document.getElementById("msg").innerText = "Link shranjen!";
-}
-</script>
+  // CORS proxy (brez backenda). Če v prihodnje ne dela, bomo dali backend/worker.
+  const PROXY_RAW = "https://api.allorigins.win/raw?url=";
 
-</body>
-</html>
+  function normalizeUrl(url) {
+    if (!url) return "";
+    url = url.trim();
+    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+    return url;
+  }
+
+  function saveLink() {
+    const link = normalizeUrl(document.getElementById("link").value);
+    if (!link) return;
+    localStorage.setItem("avtonetLink", link);
+    setStatus("Link shranjen.");
+    setError("");
+  }
+
+  function setStatus(msg) {
+    document.getElementById("status").innerText = msg || "";
+  }
+
+  function setError(msg) {
+    document.getElementById("error").innerText = msg || "";
+  }
+
+  function setResults(items) {
+    const ul = document.getElementById("results");
+    ul.innerHTML = "";
+    items.forEach(it => {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = it.href;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = it.title || it.href;
+      li.appendChild(a);
+      if (it.meta) {
+        const span = document.createElement("span");
+        span.className = "badge";
+        span.textContent = it.meta;
+        li.appendChild(span);
+      }
+      ul.appendChild(li);
+    });
+  }
+
+  function dedupeByHref(items) {
+    const seen = new Set();
+    return items.filter(x => {
+      if (!x.href) return false;
+      if (seen.has(x.href)) return false;
+      seen.add(x.href);
+      return true;
+    });
+  }
+
+  function absolutize(baseUrl, hr
