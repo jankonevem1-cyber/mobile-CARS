@@ -163,30 +163,65 @@
   // - poišče vse <a href=...> ki kažejo na Ads/details.asp
   // - za vsak link poskusi najti “container” in iz njega ceno
   function parseResults(html, baseUrl){
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const anchors = Array.from(doc.querySelectorAll("a[href]"));
-    const out = [];
-    const reDetails = /ads\/details\.asp/i;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const anchors = Array.from(doc.querySelectorAll("a[href]"));
+  const out = [];
 
-    for (const a of anchors){
-      const hrefRaw = a.getAttribute("href") || "";
-      const href = absUrl(baseUrl, hrefRaw);
-      if (!reDetails.test(href)) continue;
+  // Avto.net ima več variant linkov do oglasa (ne samo Ads/details.asp)
+  // Ujamemo najpogostejše:
+  const reAdLink = /(ads\/details\.asp|\/ad\.asp|ads\/ad\.asp|\/oglas\.asp|\/ad\/)/i;
 
-      const title = (a.textContent || "").replace(/\s+/g, " ").trim() || "Oglas";
-      // container je lahko li/div/article/td — vzamemo najbližjega, da ujame ceno
-      const container = a.closest("li, article, div, tr, td, section") || a.parentElement;
-      const containerText = (container?.textContent || "").replace(/\s+/g, " ").trim();
-      const price = extractPriceEUR(containerText);
-
-      // ID oglasov: poskusimo iz URL-ja pobrati nekaj stabilnega
-      // (če ni jasnega ID parametra, uporabimo celoten href)
-      let id = href;
-      const idMatch = href.match(/id=(\d+)/i) || href.match(/ID=(\d+)/);
-      if (idMatch) id = idMatch[1];
-
-      out.push({ id, title, href, price, rawText: containerText });
+  // Helper: vzemi “kartico” oglasa (kjer je cena) – gremo navzgor več nivojev
+  function findContainer(el){
+    let cur = el;
+    for (let i = 0; i < 8; i++){
+      if (!cur) break;
+      const txt = (cur.textContent || "").replace(/\s+/g, " ").trim();
+      // kartica oglasa skoraj vedno vsebuje € (ker results_100 pokaže samo s ceno)
+      if (txt.includes("€")) return cur;
+      cur = cur.parentElement;
     }
+    return el.parentElement || el;
+  }
+
+  for (const a of anchors){
+    const hrefRaw = a.getAttribute("href") || "";
+    const href = absUrl(baseUrl, hrefRaw);
+
+    if (!reAdLink.test(href)) continue;
+
+    const title = (a.textContent || "").replace(/\s+/g, " ").trim();
+    const container = findContainer(a);
+    const containerText = (container?.textContent || "").replace(/\s+/g, " ").trim();
+    const price = extractPriceEUR(containerText);
+
+    // ID poskusimo dobiti iz URL-ja (da je stabilen)
+    let id = href;
+    const idMatch = href.match(/(id|ID)=([0-9]+)/);
+    if (idMatch) id = idMatch[2];
+
+    out.push({
+      id,
+      title: title || "Oglas",
+      href,
+      price,
+      rawText: containerText
+    });
+  }
+
+  // dedupe
+  const seen = new Set();
+  const uniq = [];
+  for (const x of out){
+    const key = String(x.id || x.href);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    uniq.push(x);
+  }
+  return uniq;
+}
+
+    
 
     // Dedupe po id/href
     const seen = new Set();
