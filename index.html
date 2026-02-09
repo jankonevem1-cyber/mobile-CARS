@@ -6,41 +6,48 @@
   <title>Avto.net Finder</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 16px; }
-    input { width: min(900px, 90vw); padding: 10px; }
+    input { width: min(980px, 92vw); padding: 10px; }
     button { padding: 10px 14px; margin-left: 6px; cursor: pointer; }
     .row { margin: 10px 0; }
     .muted { color: #666; font-size: 14px; }
     ul { padding-left: 18px; }
-    li { margin: 6px 0; }
+    li { margin: 8px 0; }
     .badge { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; font-size:12px; margin-left:8px; color:#444; }
     .error { color: #b00020; }
+    details { margin-top: 10px; }
+    pre { white-space: pre-wrap; word-break: break-word; background:#f7f7f7; padding:10px; border-radius:8px; }
   </style>
 </head>
 <body>
   <h2>Avto.net – prikaz oglasov iz linka</h2>
   <div class="muted">
-    Prilepi Avto.net link iskanja (npr. iz “Iskalnik”). Stran nato izpiše oglase.<br>
-    Opomba: za branje Avto.net uporabljam CORS proxy (včasih lahko odpove).
+    Prilepi URL strani, kjer vidiš seznam oglasov (rezultati iskanja), ne “kategorije”.
+    Če Avto.net blokira proxy, bo v debug izpisu.
   </div>
 
   <div class="row">
-    <input id="link" placeholder="Prilepi Avto.net search link (npr. https://www.avto.net/Ads/search.asp?...)" />
+    <input id="link" placeholder="Prilepi Avto.net URL z rezultati (npr. .../Ads/search.asp?...)" />
     <button onclick="saveLink()">Shrani</button>
     <button onclick="loadAds()">Prikaži oglase</button>
   </div>
 
-  <div class="row muted">
-    <span>Proxy:</span>
-    <span class="badge">api.allorigins.win</span>
-  </div>
-
   <div id="status" class="row muted"></div>
   <div id="error" class="row error"></div>
+
   <ul id="results"></ul>
 
+  <details id="debugBox" style="display:none;">
+    <summary>Debug</summary>
+    <div class="muted" id="debugMeta"></div>
+    <pre id="debugHtml"></pre>
+  </details>
+
 <script>
-  // CORS proxy (brez backenda). Če v prihodnje ne dela, bomo dali backend/worker.
-  const PROXY_RAW = "https://api.allorigins.win/raw?url=";
+  // 2 proxy-ja (če prvi odpove, poskusi drugega)
+  const PROXIES = [
+    (url) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(url),
+    (url) => "https://r.jina.ai/http://" + url.replace(/^https?:\/\//i, "")
+  ];
 
   function normalizeUrl(url) {
     if (!url) return "";
@@ -49,21 +56,8 @@
     return url;
   }
 
-  function saveLink() {
-    const link = normalizeUrl(document.getElementById("link").value);
-    if (!link) return;
-    localStorage.setItem("avtonetLink", link);
-    setStatus("Link shranjen.");
-    setError("");
-  }
-
-  function setStatus(msg) {
-    document.getElementById("status").innerText = msg || "";
-  }
-
-  function setError(msg) {
-    document.getElementById("error").innerText = msg || "";
-  }
+  function setStatus(msg) { document.getElementById("status").innerText = msg || ""; }
+  function setError(msg) { document.getElementById("error").innerText = msg || ""; }
 
   function setResults(items) {
     const ul = document.getElementById("results");
@@ -96,4 +90,110 @@
     });
   }
 
-  function absolutize(baseUrl, hr
+  function absolutize(baseUrl, href) {
+    try { return new URL(href, baseUrl).toString(); }
+    catch { return href; }
+  }
+
+  function parseAvtoNet(html, baseUrl) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const anchors = Array.from(doc.querySelectorAll("a[href]"));
+
+    // bolj robustno: regex case-insensitive
+    const re = /ads\/details\.asp/i;
+
+    const items = anchors
+      .map(a => {
+        const hrefRaw = a.getAttribute("href") || "";
+        const href = absolutize(baseUrl, hrefRaw);
+        const title = (a.textContent || "").replace(/\s+/g, " ").trim();
+
+        if (!re.test(href)) return null;
+
+        // meta: poskusi ujeti € iz bližnjega teksta
+        const parentText = (a.closest("li, div, article, section")?.textContent || "")
+          .replace(/\s+/g, " ").trim();
+        let meta = "";
+        const m = parentText.match(/(\d[\d\.\s]{2,}\s?€)/);
+        if (m) meta = m[1].replace(/\s+/g, " ").trim();
+
+        return { title: title || "Oglas", href, meta };
+      })
+      .filter(Boolean);
+
+    return dedupeByHref(items);
+  }
+
+  function showDebug(meta, html) {
+    const box = document.getElementById("debugBox");
+    const m = document.getElementById("debugMeta");
+    const pre = document.getElementById("debugHtml");
+    box.style.display = "block";
+    m.innerText = meta || "";
+    pre.innerText = (html || "").slice(0, 800);
+  }
+
+  function saveLink() {
+    const link = normalizeUrl(document.getElementById("link").value);
+    if (!link) return;
+    localStorage.setItem("avtonetLink", link);
+    setStatus("Link shranjen.");
+    setError("");
+  }
+
+  async function fetchWithFallback(url) {
+    let lastErr = null;
+    for (let i = 0; i < PROXIES.length; i++) {
+      const proxied = PROXIES[i](url);
+      try {
+        const res = await fetch(proxied, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return await res.text();
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error("Fetch failed");
+  }
+
+  async function loadAds() {
+    setError("");
+    setResults([]);
+    document.getElementById("debugBox").style.display = "none";
+
+    const saved = localStorage.getItem("avtonetLink") || "";
+    const linkInput = document.getElementById("link").value;
+    const url = normalizeUrl(linkInput || saved);
+
+    if (!url) { setError("Najprej prilepi Avto.net link z rezultati iskanja."); return; }
+
+    setStatus("Nalagam…");
+    try {
+      const html = await fetchWithFallback(url);
+      const items = parseAvtoNet(html, url);
+
+      if (!items.length) {
+        setStatus("");
+        setError("Ni najdenih linkov do oglasov (Ads/details.asp). Verjetno URL ni rezultatni seznam ali Avto.net vrne preusmeritev/zaščito.");
+        showDebug("URL: " + url + " | HTML length: " + (html?.length || 0), html);
+        return;
+      }
+
+      setResults(items.slice(0, 50));
+      setStatus("Najdeno oglasov: " + items.length + " (prikazujem prvih 50).");
+      localStorage.setItem("avtonetLink", url);
+      document.getElementById("link").value = url;
+
+    } catch (e) {
+      setStatus("");
+      setError("Napaka pri nalaganju (proxy/Avto.net blokada). " + (e?.message || e));
+    }
+  }
+
+  (function init() {
+    const saved = localStorage.getItem("avtonetLink");
+    if (saved) document.getElementById("link").value = saved;
+  })();
+</script>
+</body>
+</html>
