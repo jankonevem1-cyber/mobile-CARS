@@ -3,89 +3,252 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Avto.net LIVE – do 2000€</title>
+  <title>Avto.net – Iskalnik & Oglasi</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 18px; background:#fafafa; }
-    h2 { margin: 0 0 8px; }
-    .muted { color:#666; font-size: 13px; }
-    .card { background:#fff; border:1px solid #e7e7e7; border-radius:12px; padding:14px; max-width: 1100px; }
-    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:10px 0; }
-    input[type="text"] { flex: 1; min-width: 320px; padding:10px 12px; border-radius:10px; border:1px solid #ddd; }
-    input[type="number"] { width: 120px; padding:10px 12px; border-radius:10px; border:1px solid #ddd; }
-    button { padding:10px 12px; border-radius:10px; border:1px solid #111; background:#111; color:#fff; cursor:pointer; }
-    button.secondary { background:#fff; color:#111; }
-    button:disabled { opacity:0.5; cursor:not-allowed; }
-
-    .status { margin-top: 8px; font-size: 13px; color:#333; }
-    .error { margin-top: 8px; font-size: 13px; color:#b00020; }
-
-    .list { margin-top: 12px; display:flex; flex-direction:column; gap:10px; }
-    .item {
-      background:#fff; border:1px solid #e7e7e7; border-radius:12px; padding:12px 14px;
-      display:flex; gap:12px; align-items:flex-start; justify-content:space-between;
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --border:#e6e7ee;
+      --text:#111;
+      --muted:#666;
+      --accent:#0b57d0;
+      --new:#0a7;
+      --danger:#b00020;
+      --shadow: 0 8px 24px rgba(0,0,0,.06);
+      --radius:16px;
     }
-    .left { min-width: 0; }
-    .title { font-weight:700; }
-    .meta { margin-top:4px; display:flex; gap:8px; flex-wrap:wrap; font-size: 13px; color:#444; }
-    .pill { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; background:#fff; }
-    .pill.new { border-color:#0a7; color:#0a7; font-weight:700; }
-    .pill.price { border-color:#bbb; }
-    .right { display:flex; gap:8px; align-items:center; flex-shrink:0; }
-    a { color:#0b57d0; text-decoration:none; }
-    a:hover { text-decoration:underline; }
-    .small { font-size: 12px; color:#666; }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; padding:18px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg); color:var(--text);
+    }
+
+    .wrap{ max-width:1100px; margin:0 auto; }
+
+    /* ====== ISKALNIK ====== */
+    .searchCard{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      padding:16px;
+    }
+    .searchTitle{
+      font-weight:800;
+      font-size:18px;
+      margin:0 0 8px;
+    }
+    .hint{ color:var(--muted); font-size:13px; margin-bottom:12px; }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 120px 120px;
+      gap:10px;
+      align-items:end;
+    }
+    @media (max-width: 820px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+    label{ font-size:12px; color:var(--muted); display:block; margin:0 0 6px; }
+    input{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#fff;
+      font-size:14px;
+      outline:none;
+    }
+    input:focus{ border-color:#c9d6ff; box-shadow:0 0 0 3px rgba(11,87,208,.10); }
+    .btnRow{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:12px;
+    }
+    button{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #111;
+      background:#111;
+      color:#fff;
+      cursor:pointer;
+      font-weight:700;
+    }
+    button.secondary{
+      background:#fff;
+      color:#111;
+      border:1px solid var(--border);
+    }
+    button:disabled{ opacity:.55; cursor:not-allowed; }
+
+    .statusRow{
+      margin-top:10px;
+      font-size:13px;
+      color:#333;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .error{ color:var(--danger); }
+
+    /* ====== OGLASI ====== */
+    .adsHeader{
+      margin-top:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .adsTitle{
+      font-size:16px;
+      font-weight:800;
+      margin:0;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border:1px solid var(--border);
+      background:#fff;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .list{
+      margin-top:10px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .adCard{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      padding:14px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .adLeft{ min-width:0; }
+    .adTitle{
+      font-weight:800;
+      line-height:1.2;
+      margin:0 0 6px;
+      font-size:15px;
+    }
+    .adTitle a{
+      color:var(--accent);
+      text-decoration:none;
+    }
+    .adTitle a:hover{ text-decoration:underline; }
+    .meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .pill{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#fff;
+      font-size:12px;
+      color:#333;
+    }
+    .pill.new{
+      border-color: rgba(10,167,120,.35);
+      color: var(--new);
+      font-weight:900;
+    }
+    .adRight{
+      flex-shrink:0;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:8px;
+      min-width:120px;
+    }
+    .price{
+      font-weight:900;
+      font-size:16px;
+    }
+    .small{ font-size:12px; color:var(--muted); }
+
+    .empty{
+      background:#fff;
+      border:1px dashed var(--border);
+      border-radius:var(--radius);
+      padding:14px;
+      color:var(--muted);
+      font-size:13px;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Avto.net LIVE (do 2000€)</h2>
-    <div class="muted">
-      Stran periodično preverja Avto.net rezultate in označi nove oglase.  
-      Če Avto.net/proxy blokira, bo treba backend rešitev.
+<div class="wrap">
+
+  <!-- ISKALNIK -->
+  <div class="searchCard">
+    <div class="searchTitle">Iskalnik</div>
+    <div class="hint">
+      Prilepi Avto.net URL rezultatov (tvoj link). Stran osvežuje in prikazuje najnovejše oglase do določene cene.
+      <b>Priporočilo:</b> interval 60s ali več (da ne blokira).
     </div>
 
-    <div class="row">
-      <input id="url" type="text" />
+    <div class="grid">
+      <div>
+        <label>Avto.net link (rezultati)</label>
+        <input id="url" type="text" />
+      </div>
+
+      <div>
+        <label>Max €</label>
+        <input id="maxPrice" type="number" value="2000" min="0" step="50" />
+      </div>
+
+      <div>
+        <label>Interval (s)</label>
+        <input id="intervalSec" type="number" value="60" min="30" step="10" />
+      </div>
     </div>
 
-    <div class="row">
-      <label class="muted">Max €</label>
-      <input id="maxPrice" type="number" value="2000" min="0" step="50" />
-      <label class="muted">Interval (s)</label>
-      <input id="intervalSec" type="number" value="60" min="10" step="10" />
+    <div class="btnRow">
       <button id="btnStart" onclick="start()">Start</button>
       <button id="btnStop" class="secondary" onclick="stop()" disabled>Stop</button>
       <button class="secondary" onclick="refreshOnce()">Ročno osveži</button>
       <button class="secondary" onclick="resetSeen()">Reset “seen”</button>
     </div>
 
-    <div id="status" class="status"></div>
-    <div id="error" class="error"></div>
+    <div class="statusRow">
+      <div id="status">Pripravljen.</div>
+      <div id="error" class="error"></div>
+    </div>
   </div>
 
-  <div class="card" style="margin-top:14px; max-width:1100px;">
-    <div class="row" style="justify-content:space-between;">
-      <div>
-        <div class="muted">Prikazujem: <b>najprej NEW</b>, potem ostalo (v vrstnem redu iz Avto.net).</div>
-        <div class="muted">Klik na naslov odpre oglas v novem zavihku.</div>
-      </div>
-      <div class="small" id="lastCheck"></div>
-    </div>
-    <div id="list" class="list"></div>
+  <!-- OGLASI -->
+  <div class="adsHeader">
+    <h3 class="adsTitle">Oglasi</h3>
+    <div class="badge" id="lastCheck">Zadnji check: —</div>
   </div>
+
+  <div id="list" class="list"></div>
+
+</div>
 
 <script>
-  // Tvoj fiksni link (lahko ga spremeniš v inputu)
   const DEFAULT_URL = "https://www.avto.net/Ads/results_100.asp?oglasrubrika=1&prodajalec=2";
 
-  // Proxy strategija (brez backenda). Če prvi odpove, poskusimo drugi.
   const PROXIES = [
     (url) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(url),
-    (url) => "https://r.jina.ai/http://" + url.replace(/^https?:\/\//i, "")
+    (url) => "https://r.jina.ai/http://" + url.replace(/^https?:\\/\\//i, "")
   ];
 
-  const LS_SEEN_KEY = "avtonet_seen_ids_v1";
-  const LS_CFG_KEY  = "avtonet_cfg_v1";
+  const LS_SEEN_KEY = "avtonet_seen_ids_v2";
+  const LS_CFG_KEY  = "avtonet_cfg_v2";
 
   let timer = null;
   let inFlight = false;
@@ -96,8 +259,7 @@
   function setError(msg){ $("error").textContent = msg || ""; }
 
   function nowStr(){
-    const d = new Date();
-    return d.toLocaleString();
+    return new Date().toLocaleString();
   }
 
   function loadCfg(){
@@ -118,12 +280,13 @@
     saveSeen([]);
     setStatus("Resetirano: “seen” je prazno.");
     setError("");
+    renderCards([], new Set());
   }
 
   function normalizeUrl(u){
     u = (u || "").trim();
     if (!u) return "";
-    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    if (!/^https?:\\/\\//i.test(u)) u = "https://" + u;
     return u;
   }
 
@@ -147,87 +310,56 @@
     catch { return href; }
   }
 
-  // Izlušči ceno iz teksta (zelo robustno; ujame 1.950 €, 1950 €, 1 950 €, ipd.)
   function extractPriceEUR(text){
     if (!text) return null;
-    const t = text.replace(/\u00a0/g, " "); // NBSP
-    // prvi match, kjer je € blizu številke
-    const m = t.match(/(\d[\d\.\s]{0,10})\s*€|\€\s*(\d[\d\.\s]{0,10})/);
+    const t = text.replace(/\\u00a0/g, " ");
+    const m = t.match(/(\\d[\\d\\.\\s]{0,10})\\s*€|€\\s*(\\d[\\d\\.\\s]{0,10})/);
     if (!m) return null;
-    const raw = (m[1] || m[2] || "").replace(/[.\s]/g, "");
+    const raw = (m[1] || m[2] || "").replace(/[.\\s]/g, "");
     const n = parseInt(raw, 10);
     return Number.isFinite(n) ? n : null;
   }
 
-  // Parsanje rezultatov:
-  // - poišče vse <a href=...> ki kažejo na Ads/details.asp
-  // - za vsak link poskusi najti “container” in iz njega ceno
+  // Bolj robustno: Avto.net linki do oglasov niso vedno Ads/details.asp
   function parseResults(html, baseUrl){
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const anchors = Array.from(doc.querySelectorAll("a[href]"));
-  const out = [];
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const anchors = Array.from(doc.querySelectorAll("a[href]"));
+    const out = [];
 
-  // Avto.net ima več variant linkov do oglasa (ne samo Ads/details.asp)
-  // Ujamemo najpogostejše:
-  const reAdLink = /(ads\/details\.asp|\/ad\.asp|ads\/ad\.asp|\/oglas\.asp|\/ad\/)/i;
+    const reAdLink = /(ads\\/details\\.asp|\\/ad\\.asp|ads\\/ad\\.asp|\\/oglas\\.asp|\\/ad\\/)/i;
 
-  // Helper: vzemi “kartico” oglasa (kjer je cena) – gremo navzgor več nivojev
-  function findContainer(el){
-    let cur = el;
-    for (let i = 0; i < 8; i++){
-      if (!cur) break;
-      const txt = (cur.textContent || "").replace(/\s+/g, " ").trim();
-      // kartica oglasa skoraj vedno vsebuje € (ker results_100 pokaže samo s ceno)
-      if (txt.includes("€")) return cur;
-      cur = cur.parentElement;
+    function findContainer(el){
+      let cur = el;
+      for (let i = 0; i < 10; i++){
+        if (!cur) break;
+        const txt = (cur.textContent || "").replace(/\\s+/g, " ").trim();
+        if (txt.includes("€")) return cur;
+        cur = cur.parentElement;
+      }
+      return el.parentElement || el;
     }
-    return el.parentElement || el;
-  }
 
-  for (const a of anchors){
-    const hrefRaw = a.getAttribute("href") || "";
-    const href = absUrl(baseUrl, hrefRaw);
+    for (const a of anchors){
+      const hrefRaw = a.getAttribute("href") || "";
+      const href = absUrl(baseUrl, hrefRaw);
+      if (!reAdLink.test(href)) continue;
 
-    if (!reAdLink.test(href)) continue;
+      const title = (a.textContent || "").replace(/\\s+/g, " ").trim() || "Oglas";
+      const container = findContainer(a);
+      const containerText = (container?.textContent || "").replace(/\\s+/g, " ").trim();
+      const price = extractPriceEUR(containerText);
 
-    const title = (a.textContent || "").replace(/\s+/g, " ").trim();
-    const container = findContainer(a);
-    const containerText = (container?.textContent || "").replace(/\s+/g, " ").trim();
-    const price = extractPriceEUR(containerText);
+      let id = href;
+      const idMatch = href.match(/(id|ID)=([0-9]+)/);
+      if (idMatch) id = idMatch[2];
 
-    // ID poskusimo dobiti iz URL-ja (da je stabilen)
-    let id = href;
-    const idMatch = href.match(/(id|ID)=([0-9]+)/);
-    if (idMatch) id = idMatch[2];
+      out.push({ id, title, href, price });
+    }
 
-    out.push({
-      id,
-      title: title || "Oglas",
-      href,
-      price,
-      rawText: containerText
-    });
-  }
-
-  // dedupe
-  const seen = new Set();
-  const uniq = [];
-  for (const x of out){
-    const key = String(x.id || x.href);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    uniq.push(x);
-  }
-  return uniq;
-}
-
-    
-
-    // Dedupe po id/href
     const seen = new Set();
     const uniq = [];
     for (const x of out){
-      const key = x.id || x.href;
+      const key = String(x.id || x.href);
       if (seen.has(key)) continue;
       seen.add(key);
       uniq.push(x);
@@ -235,71 +367,78 @@
     return uniq;
   }
 
-  function render(items, seenSet){
-    const maxPrice = parseInt($("maxPrice").value, 10) || 2000;
-
-    // filter: price <= maxPrice (če price ni najden, ga skrijemo – po želji lahko pokažemo tudi “unknown”)
-    const filtered = items.filter(x => x.price != null && x.price <= maxPrice);
-
-    // NEW na vrh
-    const withFlags = filtered.map(x => ({...x, isNew: !seenSet.has(String(x.id || x.href))}));
-    const news = withFlags.filter(x => x.isNew);
-    const olds = withFlags.filter(x => !x.isNew);
-
-    const finalList = [...news, ...olds];
+  function renderCards(items, seenSet){
     const list = $("list");
     list.innerHTML = "";
 
+    const maxPrice = parseInt($("maxPrice").value, 10) || 2000;
+
+    const filtered = items.filter(x => x.price != null && x.price <= maxPrice);
+    const withFlags = filtered.map(x => ({...x, isNew: !seenSet.has(String(x.id || x.href))}));
+    const news = withFlags.filter(x => x.isNew);
+    const olds = withFlags.filter(x => !x.isNew);
+    const finalList = [...news, ...olds];
+
     if (!finalList.length){
-      list.innerHTML = `<div class="muted">Ni zadetkov do ${maxPrice} € (ali Avto.net ne izpiše cene v HTML, ki ga dobimo).</div>`;
+      const div = document.createElement("div");
+      div.className = "empty";
+      div.textContent = `Ni zadetkov do ${maxPrice} € (ali Avto.net/proxy ne vrne oglasov).`;
+      list.appendChild(div);
       return { newCount: 0, shown: 0 };
     }
 
-    for (const x of finalList.slice(0, 80)){ // limit za preglednost
-      const el = document.createElement("div");
-      el.className = "item";
+    for (const x of finalList.slice(0, 80)){
+      const card = document.createElement("div");
+      card.className = "adCard";
 
       const left = document.createElement("div");
-      left.className = "left";
+      left.className = "adLeft";
 
-      const t = document.createElement("div");
-      t.className = "title";
+      const title = document.createElement("div");
+      title.className = "adTitle";
       const a = document.createElement("a");
       a.href = x.href;
       a.target = "_blank";
       a.rel = "noopener noreferrer";
       a.textContent = x.title;
-      t.appendChild(a);
+      title.appendChild(a);
 
       const meta = document.createElement("div");
       meta.className = "meta";
 
-      const p1 = document.createElement("span");
-      p1.className = "pill price";
-      p1.textContent = (x.price != null ? `${x.price} €` : "cena ?");
-
-      meta.appendChild(p1);
+      const pPrice = document.createElement("span");
+      pPrice.className = "pill";
+      pPrice.textContent = (x.price != null ? `${x.price} €` : "cena ?");
+      meta.appendChild(pPrice);
 
       if (x.isNew){
-        const p2 = document.createElement("span");
-        p2.className = "pill new";
-        p2.textContent = "NEW";
-        meta.appendChild(p2);
+        const pNew = document.createElement("span");
+        pNew.className = "pill new";
+        pNew.textContent = "NEW";
+        meta.appendChild(pNew);
       }
 
-      left.appendChild(t);
+      left.appendChild(title);
       left.appendChild(meta);
 
       const right = document.createElement("div");
-      right.className = "right";
+      right.className = "adRight";
+
+      const price = document.createElement("div");
+      price.className = "price";
+      price.textContent = (x.price != null ? `${x.price} €` : "");
+
       const small = document.createElement("div");
       small.className = "small";
       small.textContent = x.isNew ? "novo najdeno" : "že videno";
+
+      right.appendChild(price);
       right.appendChild(small);
 
-      el.appendChild(left);
-      el.appendChild(right);
-      list.appendChild(el);
+      card.appendChild(left);
+      card.appendChild(right);
+
+      list.appendChild(card);
     }
 
     return { newCount: news.length, shown: finalList.length };
@@ -318,19 +457,16 @@
 
       setStatus("Nalagam Avto.net…");
       const html = await fetchHtml(url);
-
       const items = parseResults(html, url);
 
       const seenArr = loadSeen();
       const seenSet = new Set(seenArr.map(String));
 
-      const { newCount, shown } = render(items, seenSet);
+      const { newCount, shown } = renderCards(items, seenSet);
 
-      // Označimo kot “seen” vse, ki so prikazani (da naslednji refresh pokaže samo res nove)
-      // (lahko spremeniš logiko: only mark after click; ampak za “prvi vidim” je to ok)
-      const maxPriceLocal = maxPrice;
+      // označi prikazane kot seen
       const toMark = items
-        .filter(x => x.price != null && x.price <= maxPriceLocal)
+        .filter(x => x.price != null && x.price <= maxPrice)
         .map(x => String(x.id || x.href));
 
       const merged = Array.from(new Set([...seenArr.map(String), ...toMark]));
@@ -339,7 +475,6 @@
       $("lastCheck").textContent = "Zadnji check: " + nowStr();
       setStatus(`OK. Prikazujem ${shown} oglasov do ${maxPrice} €. Novi: ${newCount}.`);
 
-      // opcijsko: zvočni signal ob novih (brskalnik mora dovoliti)
       if (newCount > 0) {
         try { new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=").play(); } catch {}
       }
@@ -353,9 +488,8 @@
   }
 
   function start(){
-    const intervalSec = Math.max(10, parseInt($("intervalSec").value, 10) || 60);
+    const intervalSec = Math.max(30, parseInt($("intervalSec").value, 10) || 60);
 
-    // shrani nastavitve
     saveCfg({
       url: $("url").value,
       maxPrice: $("maxPrice").value,
@@ -365,8 +499,8 @@
     $("btnStart").disabled = true;
     $("btnStop").disabled = false;
 
-    refreshOnce();
-    stop(); // počisti star timer
+    stop();               // počisti star timer
+    refreshOnce();        // takoj
     timer = setInterval(refreshOnce, intervalSec * 1000);
 
     setStatus("Auto-refresh ON (" + intervalSec + "s).");
@@ -384,8 +518,8 @@
     const cfg = loadCfg();
     $("url").value = normalizeUrl(cfg.url || DEFAULT_URL);
     $("maxPrice").value = cfg.maxPrice || 2000;
-    $("intervalSec").value = cfg.intervalSec || 60;
-    $("lastCheck").textContent = "";
+    $("intervalSec").value = Math.max(30, cfg.intervalSec || 60);
+    renderCards([], new Set());
   })();
 </script>
 </body>
