@@ -3,523 +3,249 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Avto.net – Iskalnik & Oglasi</title>
+  <title>Vreme – Slovenija</title>
   <style>
     :root{
-      --bg:#f6f7fb;
-      --card:#ffffff;
-      --border:#e6e7ee;
-      --text:#111;
-      --muted:#666;
-      --accent:#0b57d0;
-      --new:#0a7;
-      --danger:#b00020;
-      --shadow: 0 8px 24px rgba(0,0,0,.06);
-      --radius:16px;
+      --bg:#f6f7fb; --card:#fff; --border:#e6e7ee; --text:#111; --muted:#666;
+      --shadow: 0 8px 24px rgba(0,0,0,.06); --radius:16px; --accent:#0b57d0;
     }
     *{ box-sizing:border-box; }
-    body{
-      margin:0; padding:18px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:var(--bg); color:var(--text);
-    }
-
+    body{ margin:0; padding:18px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
     .wrap{ max-width:1100px; margin:0 auto; }
-
-    /* ====== ISKALNIK ====== */
-    .searchCard{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      box-shadow: var(--shadow);
+    .topbar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .nav a{
+      display:inline-block; padding:8px 12px; border-radius:999px; border:1px solid var(--border);
+      background:#fff; color:var(--text); text-decoration:none; font-weight:700; font-size:13px;
+    }
+    .nav a.active{ border-color:#c9d6ff; color:var(--accent); }
+    .card{
+      background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
       padding:16px;
     }
-    .searchTitle{
-      font-weight:800;
-      font-size:18px;
-      margin:0 0 8px;
-    }
-    .hint{ color:var(--muted); font-size:13px; margin-bottom:12px; }
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 120px 120px;
-      gap:10px;
-      align-items:end;
-    }
-    @media (max-width: 820px){
-      .grid{ grid-template-columns: 1fr; }
-    }
-    label{ font-size:12px; color:var(--muted); display:block; margin:0 0 6px; }
-    input{
-      width:100%;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      background:#fff;
-      font-size:14px;
-      outline:none;
-    }
-    input:focus{ border-color:#c9d6ff; box-shadow:0 0 0 3px rgba(11,87,208,.10); }
-    .btnRow{
-      display:flex; gap:10px; flex-wrap:wrap;
-      margin-top:12px;
+    h2{ margin:0 0 8px; }
+    .muted{ color:var(--muted); font-size:13px; }
+    .grid{ margin-top:12px; display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+    @media (max-width: 820px){ .grid{ grid-template-columns: 1fr; } }
+    .city{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .big{ font-size:30px; font-weight:900; }
+    .label{ font-size:12px; color:var(--muted); }
+    .row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .pill{ display:inline-block; padding:4px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; }
+    table{ width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
+    th,td{ text-align:left; padding:10px 8px; border-top:1px solid var(--border); }
+    th{ color:var(--muted); font-weight:800; }
+    .err{ color:#b00020; font-size:13px; margin-top:10px; }
+    .ok{ font-size:12px; color:var(--muted); margin-top:10px; }
+    select{
+      padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#fff; font-size:14px;
     }
     button{
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid #111;
-      background:#111;
-      color:#fff;
-      cursor:pointer;
-      font-weight:700;
+      padding:10px 12px; border-radius:12px; border:1px solid #111; background:#111; color:#fff; cursor:pointer; font-weight:800;
     }
-    button.secondary{
-      background:#fff;
-      color:#111;
-      border:1px solid var(--border);
-    }
-    button:disabled{ opacity:.55; cursor:not-allowed; }
-
-    .statusRow{
-      margin-top:10px;
-      font-size:13px;
-      color:#333;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .error{ color:var(--danger); }
-
-    /* ====== OGLASI ====== */
-    .adsHeader{
-      margin-top:14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .adsTitle{
-      font-size:16px;
-      font-weight:800;
-      margin:0;
-    }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      border:1px solid var(--border);
-      background:#fff;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      color:var(--muted);
-    }
-    .list{
-      margin-top:10px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .adCard{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      box-shadow: var(--shadow);
-      padding:14px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .adLeft{ min-width:0; }
-    .adTitle{
-      font-weight:800;
-      line-height:1.2;
-      margin:0 0 6px;
-      font-size:15px;
-    }
-    .adTitle a{
-      color:var(--accent);
-      text-decoration:none;
-    }
-    .adTitle a:hover{ text-decoration:underline; }
-    .meta{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-    .pill{
-      display:inline-block;
-      padding:4px 10px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      background:#fff;
-      font-size:12px;
-      color:#333;
-    }
-    .pill.new{
-      border-color: rgba(10,167,120,.35);
-      color: var(--new);
-      font-weight:900;
-    }
-    .adRight{
-      flex-shrink:0;
-      display:flex;
-      flex-direction:column;
-      align-items:flex-end;
-      gap:8px;
-      min-width:120px;
-    }
-    .price{
-      font-weight:900;
-      font-size:16px;
-    }
-    .small{ font-size:12px; color:var(--muted); }
-
-    .empty{
-      background:#fff;
-      border:1px dashed var(--border);
-      border-radius:var(--radius);
-      padding:14px;
-      color:var(--muted);
-      font-size:13px;
-    }
+    button.secondary{ background:#fff; color:#111; border:1px solid var(--border); }
   </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- ISKALNIK -->
-  <div class="searchCard">
-    <div class="searchTitle">Iskalnik</div>
-    <div class="hint">
-      Prilepi Avto.net URL rezultatov (tvoj link). Stran osvežuje in prikazuje najnovejše oglase do določene cene.
-      <b>Priporočilo:</b> interval 60s ali več (da ne blokira).
+  <div class="topbar">
+    <div class="nav">
+      <a href="./index.html">Oglasi</a>
+      <a class="active" href="./weather.html">Vreme</a>
+    </div>
+    <div class="muted" id="stamp">—</div>
+  </div>
+
+  <div class="card">
+    <h2>Vreme – Slovenija</h2>
+    <div class="muted">
+      Vir: Open-Meteo (brez API ključa). Prikaz: trenutna temperatura + veter + padavine + 3-dnevna napoved.
+    </div>
+
+    <div class="row" style="margin-top:12px;">
+      <div>
+        <div class="label">Izberi lokacijo</div>
+        <select id="loc">
+          <option value="lj">Ljubljana</option>
+          <option value="mb">Maribor</option>
+          <option value="ce">Celje</option>
+          <option value="kp">Koper</option>
+          <option value="kr">Kranj</option>
+          <option value="nm">Novo mesto</option>
+          <option value="ms">Murska Sobota</option>
+          <option value="ng">Nova Gorica</option>
+        </select>
+      </div>
+      <div style="align-self:end;">
+        <button onclick="loadWeather()">Osveži</button>
+        <button class="secondary" onclick="autoToggle()" id="autoBtn">Auto: OFF</button>
+      </div>
     </div>
 
     <div class="grid">
-      <div>
-        <label>Avto.net link (rezultati)</label>
-        <input id="url" type="text" />
+      <div class="card" style="box-shadow:none;">
+        <div class="city">
+          <div>
+            <div class="label" id="cityName">—</div>
+            <div class="big" id="temp">—</div>
+          </div>
+          <div class="muted" style="text-align:right;">
+            <div id="wx">—</div>
+            <div class="label" id="time">—</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <span class="pill" id="wind">Veter: —</span>
+          <span class="pill" id="rain">Padavine: —</span>
+          <span class="pill" id="hum">Vlaga: —</span>
+        </div>
+
+        <div class="ok" id="srcNote"></div>
+        <div class="err" id="err"></div>
       </div>
 
-      <div>
-        <label>Max €</label>
-        <input id="maxPrice" type="number" value="2000" min="0" step="50" />
+      <div class="card" style="box-shadow:none;">
+        <div style="font-weight:900;">3-dnevna napoved</div>
+        <table>
+          <thead>
+            <tr><th>Datum</th><th>Min</th><th>Max</th><th>Padavine</th></tr>
+          </thead>
+          <tbody id="forecast"></tbody>
+        </table>
       </div>
-
-      <div>
-        <label>Interval (s)</label>
-        <input id="intervalSec" type="number" value="60" min="30" step="10" />
-      </div>
-    </div>
-
-    <div class="btnRow">
-      <button id="btnStart" onclick="start()">Start</button>
-      <button id="btnStop" class="secondary" onclick="stop()" disabled>Stop</button>
-      <button class="secondary" onclick="refreshOnce()">Ročno osveži</button>
-      <button class="secondary" onclick="resetSeen()">Reset “seen”</button>
-    </div>
-
-    <div class="statusRow">
-      <div id="status">Pripravljen.</div>
-      <div id="error" class="error"></div>
     </div>
   </div>
-
-  <!-- OGLASI -->
-  <div class="adsHeader">
-    <h3 class="adsTitle">Oglasi</h3>
-    <div class="badge" id="lastCheck">Zadnji check: —</div>
-  </div>
-
-  <div id="list" class="list"></div>
 
 </div>
 
 <script>
-  const DEFAULT_URL = "https://www.avto.net/Ads/results_100.asp?oglasrubrika=1&prodajalec=2";
+  // Koordinate (Slovenija)
+  const LOCS = {
+    lj: { name:"Ljubljana", lat:46.0569, lon:14.5058 },
+    mb: { name:"Maribor", lat:46.5547, lon:15.6467 },
+    ce: { name:"Celje", lat:46.2389, lon:15.2675 },
+    kp: { name:"Koper", lat:45.5481, lon:13.7302 },
+    kr: { name:"Kranj", lat:46.2389, lon:14.3556 },
+    nm: { name:"Novo mesto", lat:45.8011, lon:15.1714 },
+    ms: { name:"Murska Sobota", lat:46.6613, lon:16.1660 },
+    ng: { name:"Nova Gorica", lat:45.9560, lon:13.6484 },
+  };
 
-  const PROXIES = [
-    (url) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(url),
-    (url) => "https://r.jina.ai/http://" + url.replace(/^https?:\\/\\//i, "")
-  ];
+  // WMO weather codes (osnovni prevod)
+  const WMO = {
+    0:"Jasno", 1:"Pretežno jasno", 2:"Delno oblačno", 3:"Oblačno",
+    45:"Megla", 48:"Rime megla",
+    51:"Rahla rosenje", 53:"Zmerno rosenje", 55:"Močno rosenje",
+    61:"Rahla dež", 63:"Zmeren dež", 65:"Močan dež",
+    71:"Rahla sneg", 73:"Zmeren sneg", 75:"Močan sneg",
+    80:"Kratkotrajne plohe", 81:"Plohe", 82:"Močne plohe",
+    95:"Nevihta", 96:"Nevihta s točo", 99:"Močna nevihta s točo"
+  };
 
-  const LS_SEEN_KEY = "avtonet_seen_ids_v2";
-  const LS_CFG_KEY  = "avtonet_cfg_v2";
-
-  let timer = null;
-  let inFlight = false;
+  let autoTimer = null;
 
   function $(id){ return document.getElementById(id); }
 
-  function setStatus(msg){ $("status").textContent = msg || ""; }
-  function setError(msg){ $("error").textContent = msg || ""; }
+  function setErr(msg){ $("err").textContent = msg || ""; }
 
-  function nowStr(){
-    return new Date().toLocaleString();
+  function fmtTemp(t){
+    if (t === null || t === undefined || Number.isNaN(t)) return "—";
+    return Math.round(t) + "°C";
   }
 
-  function loadCfg(){
-    try { return JSON.parse(localStorage.getItem(LS_CFG_KEY) || "{}"); } catch { return {}; }
-  }
-  function saveCfg(cfg){
-    localStorage.setItem(LS_CFG_KEY, JSON.stringify(cfg));
-  }
+  function toISODate(d){ return new Date(d).toISOString().slice(0,10); }
 
-  function loadSeen(){
-    try { return JSON.parse(localStorage.getItem(LS_SEEN_KEY) || "[]"); } catch { return []; }
-  }
-  function saveSeen(arr){
-    localStorage.setItem(LS_SEEN_KEY, JSON.stringify(arr));
-  }
+  async function loadWeather(){
+    setErr("");
+    const key = $("loc").value;
+    const loc = LOCS[key] || LOCS.lj;
 
-  function resetSeen(){
-    saveSeen([]);
-    setStatus("Resetirano: “seen” je prazno.");
-    setError("");
-    renderCards([], new Set());
-  }
-
-  function normalizeUrl(u){
-    u = (u || "").trim();
-    if (!u) return "";
-    if (!/^https?:\\/\\//i.test(u)) u = "https://" + u;
-    return u;
-  }
-
-  async function fetchHtml(url){
-    let lastErr = null;
-    for (const p of PROXIES){
-      try{
-        const proxied = p(url);
-        const res = await fetch(proxied, { cache: "no-store" });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return await res.text();
-      } catch(e){
-        lastErr = e;
-      }
-    }
-    throw lastErr || new Error("Fetch failed");
-  }
-
-  function absUrl(base, href){
-    try { return new URL(href, base).toString(); }
-    catch { return href; }
-  }
-
-  function extractPriceEUR(text){
-    if (!text) return null;
-    const t = text.replace(/\\u00a0/g, " ");
-    const m = t.match(/(\\d[\\d\\.\\s]{0,10})\\s*€|€\\s*(\\d[\\d\\.\\s]{0,10})/);
-    if (!m) return null;
-    const raw = (m[1] || m[2] || "").replace(/[.\\s]/g, "");
-    const n = parseInt(raw, 10);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  // Bolj robustno: Avto.net linki do oglasov niso vedno Ads/details.asp
-  function parseResults(html, baseUrl){
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const anchors = Array.from(doc.querySelectorAll("a[href]"));
-    const out = [];
-
-    const reAdLink = /(ads\\/details\\.asp|\\/ad\\.asp|ads\\/ad\\.asp|\\/oglas\\.asp|\\/ad\\/)/i;
-
-    function findContainer(el){
-      let cur = el;
-      for (let i = 0; i < 10; i++){
-        if (!cur) break;
-        const txt = (cur.textContent || "").replace(/\\s+/g, " ").trim();
-        if (txt.includes("€")) return cur;
-        cur = cur.parentElement;
-      }
-      return el.parentElement || el;
-    }
-
-    for (const a of anchors){
-      const hrefRaw = a.getAttribute("href") || "";
-      const href = absUrl(baseUrl, hrefRaw);
-      if (!reAdLink.test(href)) continue;
-
-      const title = (a.textContent || "").replace(/\\s+/g, " ").trim() || "Oglas";
-      const container = findContainer(a);
-      const containerText = (container?.textContent || "").replace(/\\s+/g, " ").trim();
-      const price = extractPriceEUR(containerText);
-
-      let id = href;
-      const idMatch = href.match(/(id|ID)=([0-9]+)/);
-      if (idMatch) id = idMatch[2];
-
-      out.push({ id, title, href, price });
-    }
-
-    const seen = new Set();
-    const uniq = [];
-    for (const x of out){
-      const key = String(x.id || x.href);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      uniq.push(x);
-    }
-    return uniq;
-  }
-
-  function renderCards(items, seenSet){
-    const list = $("list");
-    list.innerHTML = "";
-
-    const maxPrice = parseInt($("maxPrice").value, 10) || 2000;
-
-    const filtered = items.filter(x => x.price != null && x.price <= maxPrice);
-    const withFlags = filtered.map(x => ({...x, isNew: !seenSet.has(String(x.id || x.href))}));
-    const news = withFlags.filter(x => x.isNew);
-    const olds = withFlags.filter(x => !x.isNew);
-    const finalList = [...news, ...olds];
-
-    if (!finalList.length){
-      const div = document.createElement("div");
-      div.className = "empty";
-      div.textContent = `Ni zadetkov do ${maxPrice} € (ali Avto.net/proxy ne vrne oglasov).`;
-      list.appendChild(div);
-      return { newCount: 0, shown: 0 };
-    }
-
-    for (const x of finalList.slice(0, 80)){
-      const card = document.createElement("div");
-      card.className = "adCard";
-
-      const left = document.createElement("div");
-      left.className = "adLeft";
-
-      const title = document.createElement("div");
-      title.className = "adTitle";
-      const a = document.createElement("a");
-      a.href = x.href;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.textContent = x.title;
-      title.appendChild(a);
-
-      const meta = document.createElement("div");
-      meta.className = "meta";
-
-      const pPrice = document.createElement("span");
-      pPrice.className = "pill";
-      pPrice.textContent = (x.price != null ? `${x.price} €` : "cena ?");
-      meta.appendChild(pPrice);
-
-      if (x.isNew){
-        const pNew = document.createElement("span");
-        pNew.className = "pill new";
-        pNew.textContent = "NEW";
-        meta.appendChild(pNew);
-      }
-
-      left.appendChild(title);
-      left.appendChild(meta);
-
-      const right = document.createElement("div");
-      right.className = "adRight";
-
-      const price = document.createElement("div");
-      price.className = "price";
-      price.textContent = (x.price != null ? `${x.price} €` : "");
-
-      const small = document.createElement("div");
-      small.className = "small";
-      small.textContent = x.isNew ? "novo najdeno" : "že videno";
-
-      right.appendChild(price);
-      right.appendChild(small);
-
-      card.appendChild(left);
-      card.appendChild(right);
-
-      list.appendChild(card);
-    }
-
-    return { newCount: news.length, shown: finalList.length };
-  }
-
-  async function refreshOnce(){
-    if (inFlight) return;
-    inFlight = true;
+    $("cityName").textContent = loc.name;
+    $("temp").textContent = "…";
+    $("wx").textContent = "…";
+    $("time").textContent = "…";
+    $("wind").textContent = "Veter: …";
+    $("rain").textContent = "Padavine: …";
+    $("hum").textContent = "Vlaga: …";
+    $("forecast").innerHTML = "";
 
     try{
-      setError("");
-      const url = normalizeUrl($("url").value);
-      const maxPrice = parseInt($("maxPrice").value, 10) || 2000;
+      const url =
+        "https://api.open-meteo.com/v1/forecast"
+        + `?latitude=${encodeURIComponent(loc.lat)}&longitude=${encodeURIComponent(loc.lon)}`
+        + "&timezone=Europe%2FLjubljana"
+        + "&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code"
+        + "&daily=temperature_2m_min,temperature_2m_max,precipitation_sum"
+        + "&forecast_days=3";
 
-      if (!url){ setError("Manjka URL."); return; }
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
 
-      setStatus("Nalagam Avto.net…");
-      const html = await fetchHtml(url);
-      const items = parseResults(html, url);
+      const cur = data.current || {};
+      const temp = cur.temperature_2m;
+      const hum = cur.relative_humidity_2m;
+      const wind = cur.wind_speed_10m;
+      const rain = cur.precipitation;
+      const code = cur.weather_code;
 
-      const seenArr = loadSeen();
-      const seenSet = new Set(seenArr.map(String));
+      $("temp").textContent = fmtTemp(temp);
+      $("wx").textContent = WMO[code] || ("Koda: " + code);
+      $("time").textContent = cur.time ? ("Posodobljeno: " + cur.time.replace("T"," ")) : "";
 
-      const { newCount, shown } = renderCards(items, seenSet);
+      $("wind").textContent = "Veter: " + (wind != null ? (Math.round(wind) + " km/h") : "—");
+      $("rain").textContent = "Padavine: " + (rain != null ? (rain + " mm") : "—");
+      $("hum").textContent = "Vlaga: " + (hum != null ? (hum + " %") : "—");
 
-      // označi prikazane kot seen
-      const toMark = items
-        .filter(x => x.price != null && x.price <= maxPrice)
-        .map(x => String(x.id || x.href));
+      // 3-dnevna napoved
+      const d = data.daily || {};
+      const days = d.time || [];
+      const mins = d.temperature_2m_min || [];
+      const maxs = d.temperature_2m_max || [];
+      const psum = d.precipitation_sum || [];
 
-      const merged = Array.from(new Set([...seenArr.map(String), ...toMark]));
-      saveSeen(merged);
-
-      $("lastCheck").textContent = "Zadnji check: " + nowStr();
-      setStatus(`OK. Prikazujem ${shown} oglasov do ${maxPrice} €. Novi: ${newCount}.`);
-
-      if (newCount > 0) {
-        try { new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=").play(); } catch {}
+      const tbody = $("forecast");
+      for (let i = 0; i < days.length; i++){
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          `<td>${days[i]}</td>` +
+          `<td>${fmtTemp(mins[i])}</td>` +
+          `<td>${fmtTemp(maxs[i])}</td>` +
+          `<td>${(psum[i] != null ? (psum[i] + " mm") : "—")}</td>`;
+        tbody.appendChild(tr);
       }
 
+      $("stamp").textContent = "Zadnja osvežitev: " + new Date().toLocaleString();
+      $("srcNote").textContent = "Podatki: api.open-meteo.com";
+
     } catch(e){
-      setStatus("");
-      setError("Napaka pri nalaganju. Avto.net/proxy lahko blokira. (" + (e?.message || e) + ")");
-    } finally {
-      inFlight = false;
+      setErr("Napaka pri nalaganju vremena: " + (e?.message || e));
+      $("temp").textContent = "—";
+      $("wx").textContent = "—";
     }
   }
 
-  function start(){
-    const intervalSec = Math.max(30, parseInt($("intervalSec").value, 10) || 60);
-
-    saveCfg({
-      url: $("url").value,
-      maxPrice: $("maxPrice").value,
-      intervalSec: intervalSec
-    });
-
-    $("btnStart").disabled = true;
-    $("btnStop").disabled = false;
-
-    stop();               // počisti star timer
-    refreshOnce();        // takoj
-    timer = setInterval(refreshOnce, intervalSec * 1000);
-
-    setStatus("Auto-refresh ON (" + intervalSec + "s).");
-  }
-
-  function stop(){
-    if (timer) clearInterval(timer);
-    timer = null;
-    $("btnStart").disabled = false;
-    $("btnStop").disabled = true;
+  function autoToggle(){
+    const btn = $("autoBtn");
+    if (autoTimer){
+      clearInterval(autoTimer);
+      autoTimer = null;
+      btn.textContent = "Auto: OFF";
+      return;
+    }
+    autoTimer = setInterval(loadWeather, 5 * 60 * 1000); // 5 min
+    btn.textContent = "Auto: ON";
+    loadWeather();
   }
 
   // init
   (function init(){
-    const cfg = loadCfg();
-    $("url").value = normalizeUrl(cfg.url || DEFAULT_URL);
-    $("maxPrice").value = cfg.maxPrice || 2000;
-    $("intervalSec").value = Math.max(30, cfg.intervalSec || 60);
-    renderCards([], new Set());
+    $("loc").value = "lj";
+    loadWeather();
   })();
 </script>
 </body>
